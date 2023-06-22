@@ -8,7 +8,7 @@ import { testingRouter } from "./routers/testing";
  * All routers added in /api/routers should be manually added here.
  */
 export const appRouter = createTRPCRouter({
-  exampldde: exampleRouter,
+  example: exampleRouter,
   testing: testingRouter,
 });
 
