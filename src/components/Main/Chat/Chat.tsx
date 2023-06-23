@@ -1,13 +1,14 @@
+/* eslint-disable @typescript-eslint/no-misused-promises */
 import { useState } from "react";
 import { Modal } from "./Modal";
 import { ChatContainer } from "./ChatContainer";
 import { api } from "~/utils/api";
-import { type Message, MessageType } from "types/Message";
+import { type Message, MessageType, type ChatHistory } from "types/Message";
 
 export const Chat = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [text, setText] = useState("");
-  const [chatHistory, setChatHistory] = useState<Message[]>([
+  const [messages, setMessages] = useState<Message[]>([
     {
       sender: "api",
       text: "Hello, I am Lawry. How can I help you today?",
@@ -21,18 +22,31 @@ export const Chat = () => {
       text: "Hello, I am Lawry. How can I help you today?",
     },
   ]);
+
+  const [chatHistory, setChatHistory] = useState<ChatHistory[]>([]);
   const mutation = api.chat.sendMessage.useMutation();
 
   const submitHandler = async (type: MessageType) => {
     console.log("submitting", text);
     try {
-      const result = await mutation.mutateAsync({ text, type });
-      setChatHistory((prev) => [
-        ...prev,
-        { sender: "api", text: result.response },
-      ]);
+      const result = await mutation.mutateAsync({
+        history: chatHistory,
+        type,
+        prompt: text,
+      });
 
-      console.log(result.response);
+      if (result.response) {
+        console.log(result.response);
+        setMessages((prev) => [
+          ...prev,
+          { sender: "user", text }, // TODO: Confirm this
+          { sender: "api", text: result.response.text as unknown as string }, // TODO: Confirm this
+        ]);
+
+        setChatHistory((prev) => [...prev, [text, result.response.text]]);
+      }
+
+      setText("");
     } catch (error) {
       console.log(error);
     }
@@ -79,7 +93,7 @@ export const Chat = () => {
 
       <div className="border-b-2 border-neutral-700" />
 
-      <ChatContainer history={chatHistory} />
+      <ChatContainer history={messages} />
 
       <div className="flex flex-1 flex-col justify-end">
         <div className="mb-6 flex justify-center gap-x-6 align-middle">

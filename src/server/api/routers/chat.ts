@@ -1,37 +1,58 @@
 import { MessageType } from "types/Message";
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { OpenAIEmbeddings } from "langchain/embeddings/openai";
+import { PineconeStore } from "langchain/vectorstores/pinecone";
+import { makeChain } from "../../../ai/make-chain";
+import { pinecone } from "../../../ai/pinecone-client";
+import { PINECONE_INDEX_NAME, PINECONE_NAME_SPACE } from "../../../ai/pinecone";
 
 export const chatRouter = createTRPCRouter({
-  hello: publicProcedure
-    .input(z.object({ text: z.string() }))
-    .query(({ input }) => {
-      return {
-        greeting: `Hello ${input.text}`,
-      };
-    }),
-
-  goodbye: publicProcedure
-    .input(z.object({ text: z.string(), number: z.number() }))
-    .query(({ input }) => {
-      return {
-        foo: `Hello ${input.text}. Number: ${input.number}`,
-      };
-    }),
-
   sendMessage: publicProcedure
-    .input(z.object({ text: z.string(), type: z.nativeEnum(MessageType) }))
+    .input(
+      z.object({
+        prompt: z.string(),
+        type: z.nativeEnum(MessageType),
+        history: z.array(z.tuple([z.string(), z.string()])), // !: Matches ChatHistory type
+      })
+    )
     .mutation(async ({ input }) => {
       console.log("hello");
-      const { text, type } = input;
-      await sleep(1000);
+      const { type, history, prompt } = input;
+      console.log(input);
 
-      return {
-        response: `Hello ${text}, of message type: ${type}`,
-      };
+      // TODO: Categorise based type of prompt
+
+      const sanitisedQuestion = prompt.trim().replaceAll("\n", " ");
+      try {
+        const index = pinecone.Index(PINECONE_INDEX_NAME);
+
+        /* create vectorstore*/
+        const vectorStore = await PineconeStore.fromExistingIndex(
+          new OpenAIEmbeddings({}),
+          {
+            pineconeIndex: index,
+            textKey: "text",
+            namespace: PINECONE_NAME_SPACE, //namespace comes from your config folder
+          }
+        );
+
+        //create chain
+        const chain = makeChain(vectorStore);
+        //Ask a question using chat history
+        const response = await chain.call({
+          question: sanitisedQuestion,
+          chat_history: history || [],
+        });
+
+        console.log("response", response);
+
+        return { response, error: null };
+      } catch (error: unknown) {
+        return {
+          error: (error as Error)?.message || "Something went wrong",
+          response: null,
+        };
+      }
     }),
 });
-
-function sleep(time: number) {
-  return new Promise((resolve) => setTimeout(resolve, time));
-}

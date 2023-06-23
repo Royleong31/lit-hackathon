@@ -2,7 +2,6 @@ import { type NextPage } from "next";
 import Head from "next/head";
 import { Sidebar } from "~/components/Sidebar/Sidebar";
 import { Logo } from "~/components/svg/Logo";
-import { api } from "~/utils/api";
 import { Chat } from "~/components/Main/Chat/Chat";
 
 const Home: NextPage = () => {
