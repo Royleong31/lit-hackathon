@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-misused-promises */
 interface FormProps {
   submitHandler: (e: React.SyntheticEvent) => Promise<void>;
   disabled: boolean;

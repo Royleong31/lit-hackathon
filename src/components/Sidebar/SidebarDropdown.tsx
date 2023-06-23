@@ -34,13 +34,13 @@ export function SidebarDropdown() {
         );
 
   return (
-    <div className="top-16 w-full mr-2">
+    <div className="top-16 mr-2 w-full">
       <Combobox value={selected} onChange={setSelected}>
         <div className="relative mt-1">
           <div className="relative w-full cursor-default overflow-hidden rounded-lg bg-white text-left shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 focus-visible:ring-offset-2 focus-visible:ring-offset-teal-300 sm:text-sm">
             <Combobox.Input
               className="w-full border-none py-2 pl-3 pr-10 text-sm leading-5 text-gray-900 outline-none focus:ring-0"
-              displayValue={(person) => person.name}
+              displayValue={(person) => (person as any).name}
               onChange={(event) => setQuery(event.target.value)}
             />
             <Combobox.Button className="absolute inset-y-0 right-0 flex items-center pr-2">
@@ -67,7 +67,7 @@ export function SidebarDropdown() {
                   <Combobox.Option
                     key={person.id}
                     className={({ active }) =>
-                      `relative cursor-default select-none py-2 focus:cursor-pointer pl-10 pr-4 ${
+                      `relative cursor-default select-none py-2 pl-10 pr-4 focus:cursor-pointer ${
                         active ? "bg-blue-600 text-white" : "text-gray-900"
                       }`
                     }
