@@ -1,10 +1,12 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
+import { Document } from "langchain/document";
 import { useState } from "react";
 import { Modal } from "./Modal";
 import { ChatContainer } from "./ChatContainer";
 import { api } from "~/utils/api";
 import { type Message, MessageType, type ChatHistory } from "types/Message";
 import { Form } from "./Form";
+import { ChainValues } from "langchain/dist/schema";
 
 export const Chat = () => {
   const [modalOpen, setModalOpen] = useState(false);
@@ -18,6 +20,19 @@ export const Chat = () => {
 
   const [chatHistory, setChatHistory] = useState<ChatHistory[]>([]);
   const mutation = api.chat.sendMessage.useMutation();
+
+  const onUploadHandler = (data: ChainValues) => {
+    console.log(data);
+    setMessages((prev) => [
+      ...prev,
+      { sender: "user", text: "Summarise the uploaded file" }, // TODO: Confirm this
+      {
+        sender: "api",
+        text: data.text as unknown as string,
+        sourceDocs: data.sourceDocuments as unknown as Document[],
+      }, // TODO: Confirm this
+    ]);
+  };
 
   const submitHandler = async (e: React.SyntheticEvent) => {
     e.preventDefault();
@@ -34,7 +49,12 @@ export const Chat = () => {
         setMessages((prev) => [
           ...prev,
           { sender: "user", text }, // TODO: Confirm this
-          { sender: "api", text: result.response.text as unknown as string }, // TODO: Confirm this
+          {
+            sender: "api",
+            text: result.response.text as unknown as string,
+            sourceDocs: result.response
+              .sourceDocuments as unknown as Document[],
+          }, // TODO: Confirm this
         ]);
 
         setChatHistory((prev) => [...prev, [text, result.response.text]]);
@@ -46,12 +66,14 @@ export const Chat = () => {
     }
   };
 
+  console.log(messages);
+
   // calc(100vh - 40px) because the total vertical padding on this container's parent is 40px
   return (
     <div className="grid h-[calc(100vh-40px)] grid-rows-[min-content_min-content_1fr_min-content] flex-col gap-y-3">
       <div className="flex items-center justify-between">
-        <p className="text-xl font-bold">Start a chat with Lawry</p>
-        <div className="flex items-center justify-center gap-x-2 rounded-xl bg-gray-300 px-4 py-2">
+        <p className="text-xl font-bold">Case Research</p>
+        <div className="flex items-center justify-center gap-x-2 rounded-xl bg-gray-300 px-2 py-2">
           <svg
             width="32"
             height="32"
@@ -79,8 +101,8 @@ export const Chat = () => {
           </svg>
 
           <div className="flex flex-col">
-            <p className="font-bold">Marcus Hooi</p>
-            <p className="font-light text-gray-600">Client</p>
+            <p className="text-[12px] font-bold">Marcus Hooi</p>
+            <p className="text-[10px] font-light text-gray-600">Client</p>
           </div>
         </div>
       </div>
@@ -91,18 +113,22 @@ export const Chat = () => {
 
       <div className="flex flex-1 flex-col justify-end">
         <div className="mb-6 flex justify-center gap-x-6 align-middle">
-          <div className="w-[180px] cursor-pointer rounded-lg bg-gray-200 px-3 py-1 text-center">
-            Compare past cases
+          <div className="w-[200px] cursor-pointer rounded-lg bg-gray-200 px-3 py-1 text-center font-semibold drop-shadow-sm">
+            Upload to chat
+          </div>
+          <div className="border-r-2 border-gray-500" />
+          <div className="w-[200px] cursor-pointer rounded-lg bg-gray-200 px-3 py-1 text-center font-semibold drop-shadow-sm">
+            Compare Past Cases
           </div>
           <div className="border-r-2 border-gray-500" />
           <div
-            className="w-[180px] cursor-pointer rounded-lg bg-gray-200 px-3 py-1 text-center"
+            className="w-[200px] cursor-pointer rounded-lg bg-gray-200 px-3 py-1 text-center font-semibold drop-shadow-sm"
             onClick={() => setModalOpen(true)}
           >
             Summarise
           </div>
           <div className="border-r-2 border-gray-500" />
-          <div className="w-[180px] cursor-pointer rounded-lg bg-gray-200 px-3 py-1 text-center">
+          <div className="w-[200px] cursor-pointer rounded-lg bg-gray-200 px-3 py-1 text-center font-semibold drop-shadow-sm">
             Research
           </div>
         </div>
@@ -116,7 +142,12 @@ export const Chat = () => {
         </div>
       </div>
 
-      {modalOpen && <Modal closeModal={() => setModalOpen(false)} />}
+      {modalOpen && (
+        <Modal
+          onUploadHandler={onUploadHandler}
+          closeModal={() => setModalOpen(false)}
+        />
+      )}
     </div>
   );
 };

@@ -90,7 +90,7 @@ export const chatRouter = createTRPCRouter({
         const chain = makeChain(vectorStore);
         //Ask a question using chat history
         const response = await chain.call({
-          question: `Summarise the article about ${title}`,
+          question: `Summarise the case including the holding on the legal issues about ${title}`,
           chat_history: [],
         });
 

@@ -1,6 +1,9 @@
+import { Document } from "langchain/document";
+
 export interface Message {
   sender: "user" | "api";
   text: string;
+  sourceDocs?: Document[];
 }
 
 export enum MessageType {
