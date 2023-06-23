@@ -6,6 +6,7 @@ import { PineconeStore } from "langchain/vectorstores/pinecone";
 import { makeChain } from "../../../ai/make-chain";
 import { pinecone } from "../../../ai/pinecone-client";
 import { PINECONE_INDEX_NAME, PINECONE_NAME_SPACE } from "../../../ai/pinecone";
+import { writeFile } from "fs/promises";
 
 export const chatRouter = createTRPCRouter({
   sendMessage: publicProcedure
@@ -54,5 +55,19 @@ export const chatRouter = createTRPCRouter({
           response: null,
         };
       }
+    }),
+
+  uploadFile: publicProcedure
+    .input(z.object({ file: z.string(), name: z.string() }))
+    .mutation(async ({ input }) => {
+      const { file, name } = input;
+      const pdfString = file.split("base64,")[1];
+
+      await writeFile(
+        `uploadedDocs/${name}.pdf`,
+        pdfString as string,
+        "base64"
+      );
+      return { response: "ok", error: null };
     }),
 });
