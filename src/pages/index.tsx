@@ -6,12 +6,6 @@ import { api } from "~/utils/api";
 import { Chat } from "~/components/Main/Chat/Chat";
 
 const Home: NextPage = () => {
-  const hello = api.example.hello.useQuery({ text: "from tRPCddjjjj889" });
-  const foo = api.testing.goodbye.useQuery({
-    number: 333,
-    text: "foo bar 678999",
-  });
-
   return (
     <>
       <Head>

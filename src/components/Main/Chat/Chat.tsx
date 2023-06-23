@@ -1,8 +1,46 @@
+import { useState } from "react";
 import { Modal } from "./Modal";
+import { ChatContainer } from "./ChatContainer";
+import { api } from "~/utils/api";
+import { type Message, MessageType } from "types/Message";
 
 export const Chat = () => {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [text, setText] = useState("");
+  const [chatHistory, setChatHistory] = useState<Message[]>([
+    {
+      sender: "api",
+      text: "Hello, I am Lawry. How can I help you today?",
+    },
+    {
+      sender: "api",
+      text: "Hello, I am Lawry. How can I help you today?",
+    },
+    {
+      sender: "user",
+      text: "Hello, I am Lawry. How can I help you today?",
+    },
+  ]);
+  const mutation = api.chat.sendMessage.useMutation();
+
+  const submitHandler = async (type: MessageType) => {
+    console.log("submitting", text);
+    try {
+      const result = await mutation.mutateAsync({ text, type });
+      setChatHistory((prev) => [
+        ...prev,
+        { sender: "api", text: result.response },
+      ]);
+
+      console.log(result.response);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  // calc(100vh - 40px) because the total vertical padding on this container's parent is 40px
   return (
-    <div className="flex h-full flex-col">
+    <div className="grid h-[calc(100vh-40px)] grid-rows-[min-content_min-content_1fr_min-content] flex-col gap-y-3">
       <div className="flex items-center justify-between">
         <p className="text-xl font-bold">Start a chat with Lawry</p>
         <div className="flex items-center justify-center gap-x-2 rounded-xl bg-gray-300 px-4 py-2">
@@ -39,39 +77,27 @@ export const Chat = () => {
         </div>
       </div>
 
-      <div className="mt-2 border-b-2 border-neutral-700" />
+      <div className="border-b-2 border-neutral-700" />
 
-      <div className="mb-4 flex h-full flex-col justify-end">
-        <div className="max-w-md rounded-lg bg-gray-100 p-4">
-          Hello Marcus, I’m Lawry, your legal AI assistant. How may I help you
-          today?
-        </div>
-      </div>
+      <ChatContainer history={chatHistory} />
 
       <div className="flex flex-1 flex-col justify-end">
         <div className="mb-6 flex justify-center gap-x-6 align-middle">
-          <div
-            className="cursor-pointer rounded-lg bg-gray-200 px-3 py-1"
-            onClick={() => {}}
-          >
-            Legal Search Memo
+          <div className="w-[180px] cursor-pointer rounded-lg bg-gray-200 px-3 py-1 text-center">
+            Compare past cases
           </div>
           <div className="border-r-2 border-gray-500" />
           <div
-            className="cursor-pointer rounded-lg bg-gray-200 px-3 py-1"
-            onClick={() => {}}
+            className="w-[180px] cursor-pointer rounded-lg bg-gray-200 px-3 py-1 text-center"
+            onClick={() => setModalOpen(true)}
           >
-            Legal Search Memo
+            Summarise
           </div>
           <div className="border-r-2 border-gray-500" />
-          <div
-            className="cursor-pointer rounded-lg bg-gray-200 px-3 py-1"
-            onClick={() => {}}
-          >
-            Legal Search Memo
+          <div className="w-[180px] cursor-pointer rounded-lg bg-gray-200 px-3 py-1 text-center">
+            Research
           </div>
         </div>
-
         <div className="flex justify-between rounded-lg bg-gray-300 p-3">
           <svg
             width="25"
@@ -104,6 +130,8 @@ export const Chat = () => {
             type="text"
             className="ml-2 flex-1 border-none bg-transparent  outline-none"
             placeholder="Start typing..."
+            onChange={(val) => setText(val.target.value)}
+            value={text}
           />
           <div className="flex gap-x-2 align-middle">
             <svg
@@ -112,33 +140,8 @@ export const Chat = () => {
               viewBox="0 0 25 26"
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
-            >
-              <g clip-path="url(#clip0_4361_1076)">
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M7.4219 4.20312C6.26668 4.87 5.25412 5.75787 4.44203 6.81606C3.62995 7.87425 3.03425 9.08203 2.68892 10.3705C1.99153 12.9725 2.35636 15.745 3.70315 18.0781C5.04995 20.4112 7.2684 22.1137 9.87048 22.8111C12.4725 23.5084 15.2451 23.1437 17.5782 21.7969C17.8463 21.6541 18.1594 21.6209 18.4514 21.7045C18.7435 21.7881 18.9916 21.9819 19.1436 22.245C19.2957 22.508 19.3396 22.8197 19.2661 23.1145C19.1927 23.4092 19.0077 23.6641 18.75 23.825C16.3867 25.1887 13.6421 25.7419 10.9351 25.3998C8.22806 25.0577 5.70731 23.8392 3.75757 21.9305C1.80786 20.0217 0.536243 17.5273 0.13685 14.8281C-0.262544 12.1289 0.232214 9.37322 1.54561 6.98155C2.859 4.58989 4.91889 2.69365 7.41086 1.58229C9.90282 0.470924 12.69 0.205463 15.3469 0.826427C18.0039 1.44739 20.3847 2.92067 22.126 5.02139C23.8672 7.12212 24.8733 9.73491 24.9907 12.4609C24.9969 12.5102 25 12.5597 25 12.6094V12.7719C25.0011 12.8708 25.0011 12.9698 25 13.0687V14.9531C25.0007 15.8839 24.6989 16.7895 24.1403 17.5341C23.5819 18.2786 22.7967 18.8217 21.903 19.0816C21.0092 19.3416 20.0553 19.3042 19.1847 18.9753C18.3141 18.6464 17.5736 18.0437 17.075 17.2578C16.0833 18.3233 14.7508 19.0092 13.3074 19.1973C11.864 19.3853 10.4002 19.0636 9.16862 18.2878C7.93704 17.5119 7.01489 16.3305 6.56126 14.9474C6.10765 13.5643 6.15103 12.0662 6.6839 10.7116C7.21678 9.35706 8.20573 8.23098 9.48014 7.52766C10.7546 6.82434 12.2345 6.58789 13.6646 6.85912C15.0947 7.13034 16.3853 7.89223 17.3138 9.01331C18.2421 10.1344 18.7502 11.5444 18.75 13V14.9531C18.75 15.4711 18.9558 15.9679 19.3221 16.3342C19.6883 16.7005 20.1852 16.9062 20.7032 16.9062C21.2211 16.9062 21.718 16.7005 22.0842 16.3342C22.4505 15.9679 22.6563 15.4711 22.6563 14.9531V12.7922C22.6203 11.0271 22.1249 9.30184 21.2188 7.78662C20.3127 6.27141 19.0274 5.01855 17.4894 4.15161C15.9514 3.28469 14.214 2.83362 12.4486 2.84294C10.6832 2.85223 8.95064 3.32159 7.4219 4.20469V4.20312ZM16.4063 13C16.4063 11.964 15.9947 10.9704 15.2622 10.2379C14.5296 9.5053 13.536 9.09375 12.5 9.09375C11.464 9.09375 10.4704 9.5053 9.73789 10.2379C9.00532 10.9704 8.59378 11.964 8.59378 13C8.59378 14.036 9.00532 15.0296 9.73789 15.7621C10.4704 16.4947 11.464 16.9062 12.5 16.9062C13.536 16.9062 14.5296 16.4947 15.2622 15.7621C15.9947 15.0296 16.4063 14.036 16.4063 13Z"
-                  fill="#3D3D3D"
-                />
-              </g>
-              <defs>
-                <clipPath id="clip0_4361_1076">
-                  <rect
-                    width="25"
-                    height="25"
-                    fill="white"
-                    transform="translate(0 0.5)"
-                  />
-                </clipPath>
-              </defs>
-            </svg>
-
-            <svg
-              width="25"
-              height="26"
-              viewBox="0 0 25 26"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
+              className="cursor-pointer"
+              onClick={() => submitHandler(MessageType.RESEARCH)}
             >
               <g clip-path="url(#clip0_4361_1078)">
                 <path
@@ -162,7 +165,8 @@ export const Chat = () => {
           </div>
         </div>
       </div>
-      <Modal />
+
+      {modalOpen && <Modal closeModal={() => setModalOpen(false)} />}
     </div>
   );
 };
