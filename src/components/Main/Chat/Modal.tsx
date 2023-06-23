@@ -20,12 +20,11 @@ export const Modal = ({ closeModal, onUploadHandler }: ModalProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const mutation = api.chat.uploadFile.useMutation();
 
-  const handleOnChange: ChangeEventHandler<HTMLInputElement> = async () => {
-    closeModal();
+  const handleOnChange: ChangeEventHandler<HTMLInputElement> = async (e) => {
     const file = await getBase64((inputRef as any).current.files[0]);
-
     const name = (inputRef as any).current?.files[0]?.name ?? "placeholder";
     const result = await mutation.mutateAsync({ file, name });
+    closeModal();
 
     if (result.response) {
       onUploadHandler(result.response);
@@ -60,7 +59,6 @@ export const Modal = ({ closeModal, onUploadHandler }: ModalProps) => {
           id="fileUpload"
           placeholder="fsad"
           accept="application/pdf"
-          className="hidden"
         />
       </form>
     </div>
