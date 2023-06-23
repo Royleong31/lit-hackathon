@@ -23,7 +23,8 @@ export const Modal = ({ closeModal, onUploadHandler }: ModalProps) => {
   const handleOnChange: ChangeEventHandler<HTMLInputElement> = async () => {
     closeModal();
     const file = await getBase64((inputRef as any).current.files[0]);
-    const name = (inputRef as any).current.files[0].name;
+
+    const name = (inputRef as any).current?.files[0]?.name ?? "placeholder";
     const result = await mutation.mutateAsync({ file, name });
 
     if (result.response) {
@@ -47,7 +48,7 @@ export const Modal = ({ closeModal, onUploadHandler }: ModalProps) => {
           htmlFor="fileUpload"
           className="mt-3 flex h-[300px] w-full cursor-pointer items-center justify-center rounded border-2 border-dashed border-gray-300 align-middle"
         >
-          <button className="rounded-xl bg-blue-600 px-4 py-2 text-lg font-bold tracking-wide text-white">
+          <button className="pointer-events-none	 rounded-xl bg-blue-600 px-4 py-2 text-lg font-bold tracking-wide text-white">
             Click to Upload
           </button>
         </label>
