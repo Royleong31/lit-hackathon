@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { MessageType } from "types/Message";
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
@@ -6,7 +7,9 @@ import { PineconeStore } from "langchain/vectorstores/pinecone";
 import { makeChain } from "../../../ai/make-chain";
 import { pinecone } from "../../../ai/pinecone-client";
 import { PINECONE_INDEX_NAME, PINECONE_NAME_SPACE } from "../../../ai/pinecone";
-import { writeFile } from "fs/promises";
+import { writeFile, readFile } from "fs/promises";
+import { ingestFile } from "~/utils/ingest-file";
+import pdfParse from "pdf-parse";
 
 export const chatRouter = createTRPCRouter({
   sendMessage: publicProcedure
@@ -63,11 +66,43 @@ export const chatRouter = createTRPCRouter({
       const { file, name } = input;
       const pdfString = file.split("base64,")[1];
 
-      await writeFile(
-        `uploadedDocs/${name}.pdf`,
-        pdfString as string,
-        "base64"
-      );
-      return { response: "ok", error: null };
+      try {
+        await writeFile(`uploadedDocs/${name}`, pdfString as string, "base64");
+
+        const index = pinecone.Index(PINECONE_INDEX_NAME);
+
+        await ingestFile(name);
+
+        const vectorStore = await PineconeStore.fromExistingIndex(
+          new OpenAIEmbeddings({}),
+          {
+            pineconeIndex: index,
+            textKey: "text",
+            namespace: PINECONE_NAME_SPACE, //namespace comes from your config folder
+          }
+        );
+
+        const readFileSync = await readFile(`uploadedDocs/${name}`);
+        let pdfExtract = await pdfParse(readFileSync);
+        const title = pdfExtract.text.slice(0, 100).replace("\n", " ");
+        console.log(title);
+        //create chain
+        const chain = makeChain(vectorStore);
+        //Ask a question using chat history
+        const response = await chain.call({
+          question: `Summarise the article about ${title}`,
+          chat_history: [],
+        });
+
+        return { response, error: null };
+      } catch (error: any) {
+        return {
+          response: null,
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          error: error?.message ?? "Something went wrong",
+        };
+      }
     }),
 });
+
+//"\n\n[2011]1 SLRSINGAPORE LAW REPORTS737\nTo h   S e o k   K h e n g   \nv \nHuang Huiqun\n[2010] SGHC 308"

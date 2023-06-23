@@ -14,15 +14,13 @@ export const Modal = ({ closeModal }: { closeModal: () => void }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const mutation = api.chat.uploadFile.useMutation();
 
-  const handleOnChange: ChangeEventHandler<HTMLInputElement> = async (
-    event
-  ) => {
+  const handleOnChange: ChangeEventHandler<HTMLInputElement> = async () => {
     const file = await getBase64((inputRef as any).current.files[0]);
     const name = (inputRef as any).current.files[0].name;
     await mutation.mutateAsync({ file, name });
   };
 
-  const submitHandler = async (e: React.SyntheticEvent) => {
+  const submitHandler = (e: React.SyntheticEvent) => {
     e.preventDefault();
   };
 
